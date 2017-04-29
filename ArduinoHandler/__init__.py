@@ -7,9 +7,9 @@ import thread
 NosePoke = 'd:2:i'
 Reward = 'd:3:o'
 HouseLight = 'd:5:o'
-ServoI = 'd:6:i'
+Servo = 'd:6:p'
 CueLight = 'd:7:o'
-LeverI = 'd:8:o'
+Lever = 'd:8:o'
 NosePokeLight = 'd:12:o'
 
 
@@ -67,7 +67,10 @@ class ArduinoHandler(BoardHandler):
         if self.port == "":
             raise EnvironmentError("Arduino not found")
         self.board = Arduino(self.port)
-        
+
+    def closeCom(self):
+        self.board.exit()
+        print("Closing Connection with Arduino")
         
     def getPin(self, pin):
         if not pin in self.pins:

@@ -1,5 +1,5 @@
 from appJar import gui
-from ExperimentHandler import Handler
+from ExperimentHandler import ExperimentHandler
 import os
     
 class GUI(object):
@@ -11,8 +11,13 @@ class GUI(object):
     #Runs when the start button is pressed
     def start(self,name):
         self.app.stop()
-        self.handler = Handler(self.app.getRadioButton("expType"), self.app.getEntry(self.fields[0][0]), self.app.getEntry(self.fields[1][0]), int(self.app.getEntry(self.fields[2][0])), self.app.getEntry(self.fields[3][0]), self.app.getEntry(self.fields[4][0]))
-        self.exitCode = 0
+        if self.app.getRadioButton("expType") == "Camera Test":
+            from Camera import CameraHandler
+            self.handler = CameraHandler()
+        else:
+            self.handler = ExperimentHandler(self.app.getRadioButton("expType"), *[self.app.getEntry(field[0]) for field in self.fields])
+            
+        self.exitCode = 0 
     #Disables the start button
     def disableStart(self,):
         self.app.disableButton("Start")
@@ -26,21 +31,23 @@ class GUI(object):
     #Updates the GUI, this should be called after any change to the text fields
     def update(self,name="default"):
         #TODO Trial Length should be >= 15s
-        startEn = True
-        
-        expLen = int(self.app.getEntry(self.fields[0][0]))
-        numTri = int(self.app.getEntry(self.fields[1][0]))
-        if numTri == 0:
-            triLen = 0
-        else:
-            triLen = expLen // numTri
-        self.app.setEntry(self.fields[2][0],str(triLen))
-        if triLen < 15:
-            startEn = False
-            self.app.setEntry(self.fields[2][0],"Should be > 15. Is "+str(triLen))
-        
+        startEn = True  
         for field in self.fields:
             startEn = startEn and (len(str(self.app.getEntry(field[0]))) > 0)
+            
+        expLen = int(self.app.getEntry(self.fields[0][0]))
+        numTri = int(self.app.getEntry(self.fields[1][0]))
+        buffer = int(self.app.getEntry(self.fields[2][0]))
+        if numTri == 0:
+            triLen = 0
+            startEn = False
+        else:
+            triLen = expLen // numTri - buffer
+        if triLen <= 0:
+            startEn = False
+            
+        self.app.setEntry(self.fields[3][0],str(triLen))
+
         if not startEn:
             self.disableStart()
         else:
@@ -54,17 +61,24 @@ class GUI(object):
         
     def __init__(self):
         self.title = "Operant Conditioning"
-        self.types = ["Magazine Training"]
+        self.types = ["Magazine Training","Camera Test"]
         self.fields = [
             ["Length of Experiment (s)","num","1800",True], 
             ["Number of Trials","num", "40",True],
-            ["Length of Trial (s)","txt","45",False], 
-            ["Reward Size (L)","num", "1",True],
+            ["Buffer (s)", "num", "15", True],
+            ["Length of Trial (s)","num","45",False], 
+            ["Reward Size (s)","num", "1",True],
+            ["Speed Factor", "num", "1.0", True],
             ["File Location", "txt", os.getcwd()+"/test.csv",True]
         ]
-        
+
+    def __exit__(self,*err):
+        return True
+
+    def __enter__(self):
+        return self
+
     def startGUI(self):
-        
         self.app = gui(self.title)
         #Left Side
         self.app.startLabelFrame("Experiment Type", 0,0)
@@ -72,7 +86,7 @@ class GUI(object):
         self.app.setInPadding(0,10)
         for expType in self.types:
             self.app.addRadioButton("expType", expType)
-            self.app.addRadioButton("expType", "Testing")
+            #self.app.addRadioButton("expType", "Testing")
         self.app.stopLabelFrame()
         #Right Side
         self.app.startLabelFrame("Settings", 0,1)
@@ -85,9 +99,10 @@ class GUI(object):
             elif field[1] == "txt":
                 self.app.addLabelEntry(field[0])
                 self.app.setEntry(field[0],field[2])
-                self.app.getEntryWidget(field[0]).bind("<KeyPress>",self.update)
+                self.app.getEntryWidget(field[0]).bind("<KeyRelease>",self.update)
             if field[3] == False:
                 self.app.disableEntry(field[0])
+        self.app.disableRadioButton("expType")
         self.app.addButton("Browse...",self.browse)
         self.app.stopLabelFrame()
         #Bottom
