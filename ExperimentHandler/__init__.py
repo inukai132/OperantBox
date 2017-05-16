@@ -1,10 +1,8 @@
 from Experiment import MagTrainExperiment
-from Handler import Handler
 from appJar import gui
-import Tkinter
 import time, threading, os, sys
 
-class ExperimentHandler(Handler):
+class ExperimentHandler(object):
     
     expType = expTime = numTrial = trialTime = rewardSize = fileLoc = buffer = ""
     app = exp = None

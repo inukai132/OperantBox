@@ -1,17 +1,24 @@
 from pyfirmata import Arduino, util
 import serial.tools.list_ports as com
 from time import sleep
-import thread
+import thread, weakref
 
 
 NosePoke = 'd:2:i'
-Reward = 'd:3:o'
+Reward = 'd:3:p'
 HouseLight = 'd:5:o'
-Servo = 'd:6:p'
+Servo = 'd:6:s'
 CueLight = 'd:7:o'
-Lever = 'd:8:o'
+Lever = 'd:8:i'
 NosePokeLight = 'd:12:o'
-
+Pins = [
+    NosePoke,
+    Reward,
+    HouseLight,
+    Servo,
+    CueLight,
+    Lever,
+    NosePokeLight]
 
 class BoardHandler(object):
     board = None
@@ -53,7 +60,7 @@ class BoardHandler(object):
     
 class ArduinoHandler(BoardHandler):
     port = ""
-    pinStates = {NosePoke:False}
+    pinStates = {Lever:True}
     pins = {}
     it = None
     
@@ -66,11 +73,14 @@ class ArduinoHandler(BoardHandler):
                 break
         if self.port == "":
             raise EnvironmentError("Arduino not found")
+            return
         self.board = Arduino(self.port)
 
     def closeCom(self):
-        self.board.exit()
+        self.running = False
         print("Closing Connection with Arduino")
+        self.board.exit()
+        print("Closed Connection with Arduino")
         
     def getPin(self, pin):
         if not pin in self.pins:
@@ -94,17 +104,27 @@ class ArduinoHandler(BoardHandler):
     def __init__(self):
         self.openCom()
         self.getPin(NosePoke).enable_reporting()
+        self.getPin(Lever).enable_reporting()
         self.it = util.Iterator(self.board)
         self.it.start()
+
+    def __del__(self):
+        self.closeCom()
         
     def run(self):
         while self.running:
             for pin in self.callbacks.keys():
                 p = self.getPin(pin)
-                state = p.read()
-                if self.pinStates[pin] != state and state != None:
-                    self.pinStates[pin] = state
-                    self.callbacks[pin][1](state)
-            sleep(.1)
+                state = not p.read()
+                try:
+                    if self.pinStates[pin] != state and state != None:
+                        print str(state)
+                        self.pinStates[pin] = state
+                        self.callbacks[pin][1](state,self.callbacks[pin][0])
+                except KeyError:
+                    if state != None:
+                        self.pinStates[pin] = state
+                        #self.callbacks[pin][1](state,self.callbacks[pin][0])
+            sleep(.01)
         
     

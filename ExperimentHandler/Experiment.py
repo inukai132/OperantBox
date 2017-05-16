@@ -12,7 +12,9 @@ class Experiment(object):
     expGo = True
     board = None
     timeStart = 0
-    sf = 1.0    
+    sf = 1.0
+    servoIn = 0
+    servoOut = 50
     
     def ExpStart(self):
         self.timeStart = time.time()
@@ -36,7 +38,18 @@ class Experiment(object):
         self.LogOutput("Stopping Nose Poke Sensor")
         self.board.removeCallback("NosePoke")
     
-    def NosePoke(self,state):
+    def StartLever(self):
+        self.LogOutput("Starting Lever Sensor")
+        self.board.addCallback("Lever", self.Lever, ard.Lever)
+    
+    def StopLever(self):
+        self.LogOutput("Stopping Lever Sensor")
+        self.board.removeCallback("Lever")
+    
+    def Lever(self,state,name):
+        self.LogOutput("Lever Sensor: "+str(not state))
+    
+    def NosePoke(self,state,name):
         self.LogOutput("Nose Poke Sensor: "+str(not state))
     
     def NosePokeLight(self,state):
@@ -45,7 +58,7 @@ class Experiment(object):
 
     def Servo(self,perc):
         self.LogOutput("Setting servo to "+str(perc))
-        self.board.
+        self.board.set(ard.Servo, perc)
         
     def StartTrialLoop(self):
         self.LogOutput("Trial "+str(self.trialNum)+" Begin")
@@ -55,11 +68,11 @@ class Experiment(object):
         self.trialNum += 1
         
     def Wait(self,length):
-        self.LogOutput("Waiting for "+str(length)+" sec")
+        self.LogOutput("Waiting for "+"{0:.2f}".format(length)+" sec")
         time.sleep(length/self.sf)
         
     def Buffer(self,length):
-        self.LogOutput("Buffering for "+str(length)+" sec")
+        self.LogOutput("Buffering for "+"{0:.2f}".format(length)+" sec")
         time.sleep(length/self.sf)
         
     def Reward(self,amount):
@@ -75,7 +88,6 @@ class Experiment(object):
         self.StopNosePoke()
         self.StopTrialLoop()
         self.ExpEnd()
-        self.board.closeCom()
         
 
     def __init__(self, expTime, numTrial, trialTime, rewardSize, sf, buffer, handler):
@@ -109,19 +121,23 @@ class Experiment(object):
         self.outData.append(out)
         self.handler.WriteToTextBox(out)
         
-            
+    def addLine(self, fn, *args):
+        line = [fn]
+        for arg in args:
+            line.append(arg)
+        self.expScript.append(line)
         
 class MagTrainExperiment(Experiment):
     def Load(self, path=""):
         random.seed()
         self.expScript = []
-        self.expScript.append([self.ExpStart])
-        self.expScript.append([self.HouseLight,True])
+        self.addLine(self.ExpStart)
+        self.addLine(self.HouseLight,True)
         self.expScript.append([self.NosePokeLight,True])
         self.expScript.append([self.StartNosePoke])
         for i in range(self.numTrial):
             self.expScript.append([self.StartTrialLoop])
-            waitTime = random.randint(0,self.trialTime)
+            waitTime = random.uniform(0,self.trialTime)
             self.expScript.append([self.Buffer,self.buffer])
             self.expScript.append([self.Wait,waitTime])
             self.expScript.append([self.Reward,self.rewardSize])

@@ -11,3 +11,5 @@ with GUI() as UI:
 
 if TestHandler != None:
     TestHandler.startUI()
+
+del TestHandler
