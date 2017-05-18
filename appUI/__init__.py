@@ -1,15 +1,21 @@
 from appJar import gui
 from ExperimentHandler import ExperimentHandler
 import os, pickle
-    
+
+"""
+This class defines the initial GUI
+The GUI allows a user to change settings and pick an experiment to run
+"""
+
 class GUI(object):
-    app = None
-    handler = None
-    fields = types = []
-    title = ""
-    exitCode = -1
-    defaults = {}
-    hardDefaults = {
+    app = None #Contains the appJar object
+    handler = None #Contains the experiment handler to be loaded
+    fields = types = [] #Fields is an array that defines the text boxes on the gui
+                        #Types defines the experiment types
+    title = ""          #The title of the window
+    exitCode = -1       #Should be set to 0 if there were no errors
+    defaults = {}       #Default options to bo loaded from op.def
+    hardDefaults = {    #Hard coded defaults to be used if op.def is not found
         'Length of Trial (s)':30.0,
         'Buffer (s)':15.0,
         'Reward Size (s)':1.0,
