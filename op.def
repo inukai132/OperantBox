@@ -1,24 +1,27 @@
 (dp0
 S'Length of Trial (s)'
 p1
-F30.0
+F3.0
 sS'Speed Factor'
 p2
-F30.0
+F1.0
 sS'Number of Trials'
 p3
-F40.0
-sS'Buffer (s)'
+F100.0
+sS'Reward Size (mL)'
 p4
-F15.0
-sS'Reward Size (s)'
+F0.1
+sS'Buffer (s)'
 p5
-F30.0
-sS'Length of Experiment (s)'
+F1.0
+sS'Reward Size (s)'
 p6
-F1800.0
-sS'File Location'
+F3.0
+sS'Length of Experiment (s)'
 p7
-S'/home/pi/OperantBox/Dev/test.csv'
+F400.0
+sS'File Location'
 p8
+S'/home/pi/OperantBox/git/OperantBox/test.csv'
+p9
 s.

@@ -2,6 +2,10 @@ from appJar import gui
 import ArduinoHandler as ard
 import time
 
+'''
+This defines the control window.
+This window is used to test all features of the Arduino
+'''
 class ControllerHandler(object):
     app = gui("Control Test")
     board = None
@@ -15,24 +19,23 @@ class ControllerHandler(object):
         ard.NosePokeLight:["Pin 12: Nose Poke Light","CheckBox"]
     }
 
+#This is a callback. This function is ran whenever an input pin changes
     def cbUpdate(self, state, name):
-        print"CB: "+str(name)+": "+str(state)+"@ "+time.strftime("%H:%M:%S")
+        #print"CB: "+str(name)+": "+str(state)+"@ "+time.strftime("%H:%M:%S")
         self.app.setCheckBox(name, state)
 
+#Prints and sets the current servo position
     def scaleUpdate(self,val):
         print("Servo Scale: "+str(val))
         self.board.set(ard.Servo, float(val))
-    
+
+#Constructor, used to initialize the UI
     def __init__(self):
         if len(self.states) != len(ard.Pins):
             print "WARNING: This may not have all of the controls mapped"
-        self.initBoard()
-        self.initUI()
-
-    def initBoard(self):
-        self.board = ard.ArduinoHandler()
-        self.board.start_board()
-
+        
+            
+#Creates the UI object
     def initUI(self):
         self.app.setFont(14)
         self.app.startLabelFrame("Signals from Box",0,0)
@@ -54,14 +57,21 @@ class ControllerHandler(object):
                     self.app.addScale(self.states[state][0],0,255)
                     self.app.getScaleWidget(self.states[state][0]).config(command=self.scaleUpdate)
         self.app.stopLabelFrame()
-        
-    def startUI(self):
+        self.app.setStopFunction(self.Close)
+
+#Starts the UI
+    def startUI(self, board):
+        self.board = board
+        self.initUI()
+        self.board.start_board()
         self.app.go()
 
-    def __del__(self):
-        self.board.running = False
-        del self.board
+#When the window is closed the handler will try to close the experiment cleanly
+    def Close(self):
+        self.board.closeCom()
+        return True
 
+#Updates the checkboxes if the callback has happened, or calls the proper function
     def update(self,e):
         for state in self.states.keys():
             if not 'i' in state:
@@ -75,6 +85,5 @@ class ControllerHandler(object):
 if __name__ == "__main__":        
     c = ControllerHandler()
     c.startUI()
-    c.__del__()
     print 'done'
     

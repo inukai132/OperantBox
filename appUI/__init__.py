@@ -1,5 +1,5 @@
 from appJar import gui
-from ExperimentHandler import ExperimentHandler
+import ExperimentHandler as XH
 import os, pickle
 
 """
@@ -18,18 +18,26 @@ class GUI(object):
     hardDefaults = {    #Hard coded defaults to be used if op.def is not found
         'Length of Trial (s)':30.0,
         'Buffer (s)':15.0,
-        'Reward Size (s)':1.0,
+        'Reward Size (mL)':1.0,
         'Speed Factor':1.0,
         'File Location':os.getcwd()+"/test.csv",
         'Length of Experiment (s)':1800.0,
         'Number of Trials':40.0
         }
 
+    def __exit__(self,*err):
+        return True
+
+    def __enter__(self):
+        return self
+    
+#Resets all fields to the hard defaults
     def resetDefaults(self,name):
         for field in self.fields:
             self.app.setEntry(field[0], self.hardDefaults[field[0]])
         self.update()
 
+#Saves all field data to ./op.def
     def saveDefaults(self, path = "./op.def"):
         for field in self.fields:
             self.defaults[field[0]] = self.app.getEntry(field[0])
@@ -37,17 +45,19 @@ class GUI(object):
             pickle.dump(self.defaults, f, 0)
         return
 
+#Loads op.def into the fields
     def loadDefaults(self, path = "./op.def"):
         if os.path.exists(path):
             with open(path, 'r') as f:
                 self.defaults = pickle.load(f)
-
         return    
 
+#Returns the experiment type
     def getTestType(self):
         return self.app.getRadioButton("expType")
     
-    #Runs when the start button is pressed
+#Runs when the start button is pressed
+#Loads the handler, saves the fields, sets the exit code
     def start(self,name):
         self.saveDefaults()
         self.app.stop()
@@ -58,19 +68,20 @@ class GUI(object):
             from Control import ControllerHandler
             self.handler = ControllerHandler()
         else:
-            self.handler = ExperimentHandler(self.app.getRadioButton("expType"), *[self.app.getEntry(field[0]) for field in self.fields])
-        self.exitCode = 0 
-    #Disables the start button
+            self.handler = XH.ExperimentHandler(self.app.getRadioButton("expType"), *[self.app.getEntry(field[0]) for field in self.fields])
+        self.exitCode = 0
+        
+#Disables the start button
     def disableStart(self,):
         self.app.disableButton("Start")
         self.app.disableEnter()
         
-    #Enables the start button
+#Enables the start button
     def enableStart(self,):
         self.app.enableButton("Start")
         self.app.enableEnter(self.start)
     
-    #Updates the GUI, this should be called after any change to the text fields
+#Updates the GUI, this should be called after any change to the text fields
     def update(self,name="default"):
         startEn = True  
         for field in self.fields:
@@ -79,7 +90,7 @@ class GUI(object):
         expLen = float(self.app.getEntry(self.fields[0][0]))
         numTri = float(self.app.getEntry(self.fields[1][0]))
         buffer = float(self.app.getEntry(self.fields[2][0]))
-        reward = float(self.app.getEntry(self.fields[4][0]))
+        reward = float(self.app.getEntry(self.fields[4][0])*XH.ExperimentHandler.mLtoS)
         if numTri == 0:
             triLen = 0
             startEn = False
@@ -88,44 +99,42 @@ class GUI(object):
         if triLen <= 0:
             startEn = False
             
-        self.app.setEntry(self.fields[3][0],str(triLen))
+        self.app.setEntry(self.fields[3][0],str(triLen+reward))
 
         if not startEn:
             self.disableStart()
         else:
             self.enableStart()
-        
-    #Allows a path to be selected to store the csv
+
+#Allows a path to be selected to store the csv
     def browse(self,name):
         path = self.app.saveBox(fileExt=".csv")
-        self.app.setEntry(self.fields[4][0], path)
+        self.app.setEntry(self.fields[6][0], path)
         self.update()
-        
+
+#Constructor, loads the default values or sets the fields to the hard defaults
     def __init__(self):
         self.loadDefaults()
         self.title = "Operant Conditioning"
         self.types = ["Magazine Training","Camera Test","Control"]
         self.fields = [
-            ["Length of Experiment (s)","num","1800",True], 
-            ["Number of Trials","num", "40",True],
-            ["Buffer (s)", "num", "15", True],
-            ["Length of Trial (s)","num","45",False], 
-            ["Reward Size (s)","num", "1",True],
-            ["Speed Factor", "num", "1.0", True],
-            ["File Location", "txt", os.getcwd()+"/test.csv",True]
+            ["Length of Experiment (s)","num","",True], 
+            ["Number of Trials","num", "",True],
+            ["Buffer (s)", "num", "", True],
+            ["Length of Trial (s)","num","",False], 
+            ["Reward Size (mL)","num", "",True],
+            ["Speed Factor", "num", "", True],
+            ["File Location", "txt", "",True]
         ]
-        if len(self.defaults) > 0:
-            for field in self.fields:
-                if field[0] in self.defaults.keys():
-                    field[2] = self.defaults[field[0]]
+        for field in self.fields:
+            if field[0] in self.defaults.keys():
+                field[2] = self.defaults[field[0]]
+            else:
+                field[2] = self.hardDefaults[field[0]]
+        self.buildGUI()
 
-    def __exit__(self,*err):
-        return True
-
-    def __enter__(self):
-        return self
-
-    def startGUI(self):
+#This is where the GUI is defined
+    def buildGUI(self):
         self.app = gui(self.title)
         #Left Side
         self.app.startLabelFrame("Experiment Type", 0,0)
@@ -155,4 +164,7 @@ class GUI(object):
         self.app.addButton("Start", self.start, 1, 1)
         self.app.addButton("Cancel", quit, 1, 2)
         self.update()
+
+#Starts the GUI. 
+    def startGUI(self):
         self.app.go()
