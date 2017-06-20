@@ -61,10 +61,7 @@ class GUI(object):
     def start(self,name):
         self.saveDefaults()
         self.app.stop()
-        if self.getTestType() == "Camera Test":
-            from Camera import CameraHandler
-            self.handler = CameraHandler()
-        elif self.getTestType() == "Control":
+        if self.getTestType() == "Control":
             from Control import ControllerHandler
             self.handler = ControllerHandler()
         else:
@@ -116,7 +113,7 @@ class GUI(object):
     def __init__(self):
         self.loadDefaults()
         self.title = "Operant Conditioning"
-        self.types = ["Magazine Training","Camera Test","Control"]
+        self.types = ["Magazine Training","Control"]
         self.fields = [
             ["Length of Experiment (s)","num","",True], 
             ["Number of Trials","num", "",True],

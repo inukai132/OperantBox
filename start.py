@@ -15,9 +15,8 @@ while exitCode == 0:
             break
         
     if TestHandler != None:
-        if Board == None:
-            Board = AH()
-            #exitCode = -1
+        Board = AH()
         TestHandler.startUI(Board)
+        Board = None
+        TestHandler = None
 print 'done'
-#test

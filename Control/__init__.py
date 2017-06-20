@@ -1,14 +1,15 @@
 from appJar import gui
 import ArduinoHandler as ard
+from Camera import CameraController as Camera
 import time
 
 '''
 This defines the control window.
-This window is used to test all features of the Arduino
+This window is used to test all features of the Arduino and the Camera
 '''
 class ControllerHandler(object):
     app = gui("Control Test")
-    board = None
+    board = camera = None
     states = {
         ard.NosePoke:["Pin 2: Nose Poke","CheckBox"],
         ard.Reward:["Pin 3: Reward","CheckBox"],
@@ -18,6 +19,8 @@ class ControllerHandler(object):
         ard.Lever:["Pin 8: Lever","CheckBox"],
         ard.NosePokeLight:["Pin 12: Nose Poke Light","CheckBox"]
     }
+
+
 
 #This is a callback. This function is ran whenever an input pin changes
     def cbUpdate(self, state, name):
@@ -33,10 +36,12 @@ class ControllerHandler(object):
     def __init__(self):
         if len(self.states) != len(ard.Pins):
             print "WARNING: This may not have all of the controls mapped"
-        
+        self.camera = Camera()
+        self.camera.start()
             
 #Creates the UI object
     def initUI(self):
+        self.app = gui("Control Test")
         self.app.setFont(14)
         self.app.startLabelFrame("Signals from Box",0,0)
         for state in self.states.keys():
@@ -57,7 +62,21 @@ class ControllerHandler(object):
                     self.app.addScale(self.states[state][0],0,255)
                     self.app.getScaleWidget(self.states[state][0]).config(command=self.scaleUpdate)
         self.app.stopLabelFrame()
+        self.app.addButton("Open Camera",self.openBrowser,1,0)
+        self.app.addButton("Start Recording",self.startRecording,1,1)
+        self.app.getButtonWidget("Start Recording").config(command=self.startRecording)
         self.app.setStopFunction(self.Close)
+
+    def openBrowser(self, name):
+        self.camera.openBrowser()
+
+    def startRecording(self):
+        self.camera.startRecord()
+        self.app.getButtonWidget("Start Recording").config(text="Stop Recording",command=self.stopRecording)
+        
+    def stopRecording(self):
+        self.camera.stopRecord()
+        self.app.getButtonWidget("Start Recording").config(text="Start Recording",command=self.startRecording)
 
 #Starts the UI
     def startUI(self, board):
@@ -66,8 +85,9 @@ class ControllerHandler(object):
         self.board.start_board()
         self.app.go()
 
-#When the window is closed the handler will try to close the experiment cleanly
+#When the window is closed the handler will try to close the board cleanly
     def Close(self):
+        self.camera.stop()
         self.board.closeCom()
         return True
 
@@ -80,7 +100,6 @@ class ControllerHandler(object):
                     s = self.app.getCheckBox(self.states[state][0])
                     self.board.set(state,s)
                 print self.states[state][1]+": "+self.states[state][0]+" is "+str(s)
-
 
 if __name__ == "__main__":        
     c = ControllerHandler()
