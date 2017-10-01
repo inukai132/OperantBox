@@ -1,0 +1,84 @@
+Introduction
+
+This document is written to explain the funcitons of the Operant Box software. The aim is to educate teh reader so that they may continue development of the software, or just to use the software. This software is meant to be run on a computer with an 
+
+
+Usage
+
+To run the program, make sure that the arduino is plugged into a USB port on the computer, then run start.py. At the popup window select a test from the list on the left. The options for that test will appear on the right. Some options are automatically calculated based on the other fields. When you're done setting the options, press start and the report window will open. Pressing start now will begin the test. When the test is complete, you can export the report data in csv format by pressing Export. 
+
+
+Creating New Experiments
+
+To create a new experiment you should make a .py file in the Experiments folder. The experiment should inport Experiment and expOption from ExperimentBase. Then make a class for the new experiment that inherits from Experiment. So the first few lines should look like this:
+
+
+from ExperimentBase import Experiment
+
+from ExperimentBase import expOption
+
+
+
+class NosePokeTrain(Experiment):
+
+
+Now you should set name="Experiment Name" and then set teh options. Options are stored in a dictionary where the value is an expOption object made with the following parameters. (Name of option, Type of option ["num","str",or "bol"], Is the option changable by the user, Default option value). This dictionary defines what appears on the first window. This dictionary is also changed by the first window, so you can get those options by looking in the dictionary 
+
+
+Examples:
+
+Pick a number for the Trial Time with 40 as the default-
+	options = {"trialTime":expOption("Trial Time (s)", "num", True, 40)}
+
+Have a checkbox to enable Lever 2, off by default-
+	options = {"lever2enable":expOption("Enable Lever 2","bol",True,False)}
+
+The options currently listed under 'Nose Poke Training'-
+	options = {
+
+		"expLen":expOption("Length of Experiment (s)","num", True, 3600.0),
+
+		"triLen":expOption("Trial Time (s)","num", False, 40),
+
+		"triNum":expOption("Number of Trials","num", True, 3600/40),
+
+		"cueLen":expOption("Cue Time (s)","num", True, 10),
+
+		"reward":expOption("Reward Size (mL)","num", True, 0.5),
+
+		"levReq":expOption("Required Lever Presses","num", True, 30)
+
+	}
+
+
+If you have more advanced requirements for the options, then you should make a function called UpdateUI(self, UI). This function is run every time a field changes in the first window. This means you can calculate options that are dependent on other fields. 
+
+
+Example: 
+3 options, Experiment Length, Trial Length, and Number of Trials. Since `Trial Length = Experiment Length/Number of Trials` it is dependent on those two variables. If the options are defines as such:
+	options = {
+		"expLen":expOption("Length of Experiment (s)","num", True, 3600.0),
+
+		"triLen":expOption("Trial Time (s)","num", False, 40),
+
+		"triNum":expOption("Number of Trials","num", True, 3600/40)
+	}
+
+So the UpdateUI function will look like this:
+	def UpdateUI(self, UI):
+
+		#Get the options from the UI
+		expLen = float(UI.getEntry(self.name + self.options["expLen"].optName))
+
+		numTri = float(UI.getEntry(self.name + self.options["triNum"].optName))
+
+
+		#Calculate the trial length
+		triLen = expLen / numTri - reward
+
+
+
+		#Set the trial length in the UI
+		UI.setEntry(self.name + self.options["triLen"].optName, str(triLen + reward))
+
+		return
