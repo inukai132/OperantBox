@@ -23,12 +23,6 @@ class CameraController(object):
     def stop(self):
         if self.uv4l != None:
             subprocess.Popen(["pkill", "uv4l"])
-
-        if self.curl != None:
-            os.killpg(os.getpgid(self.curl.pid), signal.SIGTERM)
-        
-        if self.midori != None:
-            os.killpg(os.getpgid(self.midori.pid), signal.SIGTERM)
             
     def incFileName(self):
         path = '/'.join(self.orgFileName.split('/')[:-1])
@@ -48,11 +42,13 @@ class CameraController(object):
         self.midori  = subprocess.Popen(midoriCom, stderr=DEVNULL, preexec_fn=os.setsid)
 
     def startRecord(self):
-        curlCom = ["curl", "localhost:8080/stream/video.mjpeg", "-o", self.fileName]
-        print "curl Command: "+' '.join(curlCom)
+        curlCom = ["curl", "localhost:8080/stream/video.h264"]
+        ffCom = ['ffmpeg', '-y', '-i', '-', '-c:v', 'copy', '-an', '-f', 'segment', '-segment_time', '10', self.fileName.split('.')[0]+'\(%d\)'+'.'+self.fileName.split('.')[1]]
+        fullCom = curlCom + ['|'] + ffCom
+        print "full Command: "+' '.join(fullCom)
         if not os.path.exists('/'.join(self.fileName.split('/')[:-1])):
             os.mkdir('/'.join(self.fileName.split('/')[:-1]))
-        self.curl = subprocess.Popen(curlCom, preexec_fn=os.setsid)
+        self.curl = subprocess.Popen(fullCom, shell=True)
 
     def stopRecord(self):
         if self.curl != None and self.curl.pid != None:

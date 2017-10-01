@@ -9,7 +9,6 @@ The Board Thread will handle communication with the Board and preforming callbac
 class BoardThread(threading.Thread):
     running = False
     handler = None
-    debounceLevel = 10
 
     def __init__(self, handler):
         self.handler = handler
@@ -30,7 +29,7 @@ class BoardThread(threading.Thread):
                     if state != None:
                         self.handler.pinStates[pin] = state
             sleep(.001)
-        print 'ArdHan Thread Done'
+        #print 'ArdHan Thread Done'
         return
 '''
 The Aruduino Handler should contain all code defining the Arduino

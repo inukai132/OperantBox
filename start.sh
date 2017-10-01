@@ -1,3 +1,3 @@
 #!/bin/bash
 pkill uv4l
-python ./start.py
+sudo python ./start.py
